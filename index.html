@@ -4,10 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QR Attendance — Admin</title>
+  <!-- Load QRCode library from CDN for canvas drawing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
   <style>
     :root {
       --primary-color: #2563eb;
-      --secondary-color: #f3f4f6;
+      --secondary-color: #fefce8; /* Changed to a very light yellow/cream */
       --text-color: #1f2937;
       --card-bg: white;
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
@@ -94,12 +97,24 @@
       transition: background-color 0.2s;
     }
     button:hover { background-color: #1d4ed8; }
-    img.qr {
-      border: 4px solid var(--secondary-color);
-      margin-top: 15px;
-      display: block;
-      border-radius: 8px;
+    
+    /* QR Canvas Container */
+    #qrContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 15px;
+        padding: 15px;
+        border: 1px dashed #ccc;
+        border-radius: 8px;
     }
+    #combinedQrCanvas {
+        display: block;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
     table {
       width: 100%;
       border-collapse: separate;
@@ -124,6 +139,7 @@
     tr:last-child td {
         border-bottom: none;
     }
+    /* This now uses the light yellow secondary color */
     tr:nth-child(even) td {
         background-color: var(--secondary-color);
     }
@@ -150,17 +166,27 @@
         <h1>XYZ Institute Attendance</h1>
     </header>
 
+    <!-- QR Generation Section -->
     <section>
-      <h3>Generate QR for Branch</h3>
-      <input id="branchInput" type="text" placeholder="Enter branch name (exact)" />
+      <h3>Generate Custom QR Code</h3>
+      <input id="branchInput" type="text" placeholder="Enter branch name (e.g., Downtown, Main)" />
       <button id="genBtn">Generate QR Code</button>
+      
       <div id="qrArea" style="display:none">
-        <p><strong>Branch:</strong> <span id="branchName"></span></p>
-        <img id="qrImg" class="qr" width="250" alt="QR Code"/>
-        <p>URL: <a id="qrLink" target="_blank"></a></p>
+        
+        <div id="qrContainer">
+            <!-- Canvas where the combined QR image will be drawn -->
+            <canvas id="combinedQrCanvas" width="400" height="480"></canvas>
+        </div>
+        
+        <button id="downloadBtn" style="margin-top: 15px; background-color: #10b981;">Download QR (PNG)</button>
+        <p style="margin-top: 15px;">**Generated Link:** <a id="qrLink" target="_blank" style="color: var(--primary-color);"></a></p>
       </div>
+      <!-- Hidden div to temporarily hold the base QR code -->
+      <div id="qrcode" style="display: none;"></div>
     </section>
 
+    <!-- Attendance View Section -->
     <section>
       <h3>Attendance Records</h3>
       <div class="filter-group">
@@ -180,26 +206,105 @@
 
 <script>
   // ✅ CONFIGURATION
-  // !!! REPLACE THIS with your actual Google Apps Script Web App URL !!!
-  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; 
-  const ATTENDANCE_PAGE_URL = "https://virendrasingh453081-max.github.io/attendanceQR-V2/attendance.html"; 
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace with your actual Google Apps Script Web App URL
+  const ATTENDANCE_PAGE_URL = "https://virendrasingh453081-max.github.io/attendanceQR-V2/attendance.html"; // full GitHub Pages URL
+  const CANVAS_WIDTH = 400;
+  const CANVAS_HEIGHT = 480;
+  const QR_SIZE = 300; // Must be less than CANVAS_WIDTH/HEIGHT
 
-  // 🧩 Generate QR button logic
+  // -------------------------------------------------------------
+  // QR GENERATION LOGIC (Custom Canvas Drawing)
+  // -------------------------------------------------------------
   document.getElementById('genBtn').addEventListener('click', () => {
     const branch = document.getElementById('branchInput').value.trim();
     if (!branch) return alert('Please enter a branch name.');
 
+    // 1. Generate the URL
     const link = `${ATTENDANCE_PAGE_URL}?branch=${encodeURIComponent(branch)}`;
-    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
 
-    document.getElementById('branchName').textContent = branch;
-    document.getElementById('qrImg').src = qrURL;
-    document.getElementById('qrLink').href = link;
-    document.getElementById('qrLink').textContent = link;
-    document.getElementById('qrArea').style.display = 'block';
+    // 2. Clear previous QR and draw the new one
+    document.getElementById('qrcode').innerHTML = '';
+
+    // Create a temporary QR code instance
+    new QRCode(document.getElementById('qrcode'), {
+      text: link,
+      width: QR_SIZE,
+      height: QR_SIZE,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+
+    // We need a small delay for the QR code to be generated in the temporary div
+    setTimeout(() => {
+        drawCombinedQr(branch, link);
+    }, 50); 
   });
 
-  // 📊 Fetch attendance records from backend
+  // 3. Draw the combined image on the main canvas
+  function drawCombinedQr(branchName, link) {
+    const canvas = document.getElementById('combinedQrCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // The QR code generated by QRCode.js is a canvas element inside the temp div
+    const tempQrCanvas = document.getElementById('qrcode').querySelector('canvas');
+
+    if (!tempQrCanvas) {
+        console.error("QR Code canvas not found.");
+        return;
+    }
+
+    // --- Drawing ---
+    
+    // Set background color
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // --- 1. Draw Title ---
+    ctx.fillStyle = '#1f2937';
+    ctx.font = '24px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('SCAN FOR STAFF ATTENDANCE', CANVAS_WIDTH / 2, 25);
+    
+    // --- 2. Draw Branch Name ---
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 30px Inter, sans-serif';
+    ctx.fillText(branchName.toUpperCase(), CANVAS_WIDTH / 2, 60);
+
+    // --- 3. Draw QR Code ---
+    // Calculate position to center the QR below the text
+    const qrX = (CANVAS_WIDTH - QR_SIZE) / 2;
+    const qrY = 100; // Start drawing QR image 100px from the top
+    ctx.drawImage(tempQrCanvas, qrX, qrY, QR_SIZE, QR_SIZE);
+    
+    // --- 4. Update UI ---
+    document.getElementById('qrLink').href = link;
+    document.getElementById('qrLink').textContent = link;
+    document.getElementById('qrArea').style.display = 'flex';
+  }
+
+  // -------------------------------------------------------------
+  // DOWNLOAD LOGIC
+  // -------------------------------------------------------------
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const canvas = document.getElementById('combinedQrCanvas');
+    const branch = document.getElementById('branchInput').value.trim() || 'default';
+    
+    // Create an anchor element
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `attendance-qr-${branch.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+    
+    // Programmatically click the anchor element to trigger download
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+
+  // -------------------------------------------------------------
+  // ATTENDANCE VIEW LOGIC (Unchanged)
+  // -------------------------------------------------------------
   document.getElementById('viewBtn').addEventListener('click', async () => {
     document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">Loading records, please wait...</p>';
 
