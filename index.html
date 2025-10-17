@@ -1,4 +1,3 @@
-<!-- index.html (Admin) - for GitHub Pages -->
 <!doctype html>
 <html>
 <head>
@@ -36,14 +35,15 @@
   </section>
 
 <script>
-  // CONFIG: set your Apps Script web app URL and attendance page URL
-  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace
-  const ATTENDANCE_PAGE_URL = "attendance.html"; // <-- replace with your hosted attendance page
+  // CONFIG: your Apps Script web app URL
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace with your actual exec URL
+
+  // Use full GitHub Pages URL for attendance.html
+  const ATTENDANCE_PAGE_URL = "https://virendrasingh453081-max.github.io/attendanceQR-V2/attendance.html";
 
   document.getElementById('genBtn').addEventListener('click', () => {
     const branch = (document.getElementById('branchInput').value || '').trim();
     if (!branch) return alert('Enter branch name');
-    // build attendance page link (teachers scan this)
     const link = ATTENDANCE_PAGE_URL + '?branch=' + encodeURIComponent(branch);
     const qr = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(link);
     document.getElementById('branchName').textContent = branch;
