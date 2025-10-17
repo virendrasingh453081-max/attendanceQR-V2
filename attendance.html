@@ -5,21 +5,61 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Mark Attendance</title>
 <style>
-body{font-family:Arial;text-align:center;padding:18px}
-input,button{padding:10px;margin:8px;font-size:16px}
-.success{color:green}
-.error{color:red}
+body{
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 18px;
+  background-color: #f0f4f8; /* Light background */
+}
+h2 { color: #1e40af; /* Blue header */ }
+input,button{
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 90%;
+  max-width: 300px;
+}
+button{
+  background-color: #3b82f6; /* Blue button */
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+}
+button:hover { background-color: #2563eb; }
+
+#result {
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+.success{
+  color: #065f46;
+  background-color: #d1fae5;
+  border: 1px solid #10b981;
+}
+.error{
+  color: #991b1b;
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+}
+.info { color: #4b5563; }
 </style>
 </head>
 <body>
 <h2>Teacher Attendance</h2>
-<p id="info">Preparing…</p>
+<p id="info" class="info">Preparing…</p>
 
 <div id="nameBox" style="display:none">
   <p>Enter your name (first time only):</p>
   <input id="teacherName" placeholder="Full name" />
   <br>
-  <button id="saveBtn">Save & Mark Attendance</button>
+  <!-- New button to trigger attendance after name is saved -->
+  <button id="saveBtn">Save Name & Mark Attendance</button>
 </div>
 
 <p id="result"></p>
@@ -27,7 +67,9 @@ input,button{padding:10px;margin:8px;font-size:16px}
 <script>
 // -----------------------------
 // CONFIG
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace
+// !!! REPLACE THIS with your actual Google Apps Script Web App URL !!!
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; 
+
 const params = new URLSearchParams(window.location.search);
 const branch = params.get('branch') || '';
 const key = 'attendance_teacher_name';
@@ -35,30 +77,36 @@ const key = 'attendance_teacher_name';
 const info = document.getElementById('info');
 const nameBox = document.getElementById('nameBox');
 const result = document.getElementById('result');
+let teacherName = '';
 
 // -----------------------------
-// Check branch param
+// Check branch param and initialize
 if (!branch) {
   info.innerHTML = '<span class="error">Invalid QR link — branch missing.</span>';
 } else {
-  init();
-}
-
-// -----------------------------
-// Initialize
-function init(){
+  // Load stored name or prompt for input
   const stored = localStorage.getItem(key);
   if(stored && stored.trim() !== ''){
-    markAttendance(stored);
+    teacherName = stored.trim();
+    info.textContent = 'Welcome back, ' + teacherName + '. Scanning location...';
+    // Immediately attempt to mark attendance
+    markAttendance(teacherName);
   } else {
     info.textContent = 'Please enter your name (first time only).';
     nameBox.style.display='block';
+    
+    // Set up event listener for saving name
     document.getElementById('saveBtn').addEventListener('click',()=>{
       const nm = document.getElementById('teacherName').value.trim();
-      if(!nm) return alert('Enter your name');
-      localStorage.setItem(key,nm);
+      if(!nm) {
+        result.innerHTML = '<span class="error">Please enter your name.</span>';
+        return;
+      }
+      localStorage.setItem(key, nm);
+      teacherName = nm;
       nameBox.style.display='none';
-      markAttendance(nm);
+      info.textContent = 'Name saved. Scanning location...';
+      markAttendance(teacherName);
     });
   }
 }
@@ -66,51 +114,53 @@ function init(){
 // -----------------------------
 // Mark Attendance
 function markAttendance(name){
-  info.textContent='Requesting location permission...';
-  result.textContent='';
-
   if(!navigator.geolocation){
-    info.innerHTML='<span class="error">Geolocation not supported.</span>';
+    info.innerHTML='<span class="error">Geolocation not supported by this device/browser.</span>';
+    result.innerHTML='<small>Cannot proceed without location services.</small>';
     return;
   }
 
+  // Request location with high accuracy
   navigator.geolocation.getCurrentPosition(async(pos)=>{
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    info.textContent='Location captured. Sending attendance...';
+    info.textContent=`Location captured (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}). Sending attendance...`;
 
     try{
       // Build GET URL
       const url = `${BACKEND_URL}?action=submitAttendance&teacher=${encodeURIComponent(name)}&branch=${encodeURIComponent(branch)}&lat=${lat}&lng=${lng}`;
       
-      // -----------------------------
-      // Debug logging
-      console.log('Attendance URL:', url);
-
       const res = await fetch(url, { method:'GET' });
-      console.log('Raw response:', res);
-
       const json = await res.json();
-      console.log('JSON parsed:', json);
 
       if(json.success){
         result.innerHTML='<span class="success">'+escapeHtml(json.message)+'</span>';
-        info.textContent='Attendance marked at '+new Date().toLocaleString();
+        info.textContent='Attendance successfully marked at '+new Date().toLocaleString();
       } else {
-        result.innerHTML='<span class="error">'+escapeHtml(json.message)+'</span>';
-        info.textContent='Attendance not recorded.';
+        result.innerHTML='<span class="error">ATTENDANCE FAILED: '+escapeHtml(json.message)+'</span>';
+        info.textContent='Check distance or try again.';
       }
 
     }catch(err){
       console.error('Fetch error:', err);
-      result.innerHTML='<span class="error">Network error: '+escapeHtml(err.message||err)+'</span>';
+      result.innerHTML='<span class="error">Network error. Check connection.</span>';
     }
 
   },(err)=>{
+    // Geolocation error handler
     console.error('Geolocation error:', err);
-    info.innerHTML='<span class="error">Location error: '+escapeHtml(err.message||err.code)+'</span>';
-    result.innerHTML='<small>If scanning in Paytm/PhonePe, try "Open in browser" for accurate location.</small>';
-  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+    var errorMsg = "Unknown error.";
+    if (err.code === 1) {
+        errorMsg = "Permission Denied: Location access was blocked.";
+    } else if (err.code === 2) {
+        errorMsg = "Position Unavailable: Location could not be determined.";
+    } else if (err.code === 3) {
+        errorMsg = "Timeout: Location request took too long.";
+    }
+
+    info.innerHTML=`<span class="error">Location Error: ${errorMsg}</span>`;
+    result.innerHTML='<small>Please ensure location services are enabled for this app/browser and try again.</small>';
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0}); // Increased timeout for better capture reliability
 }
 
 // -----------------------------
