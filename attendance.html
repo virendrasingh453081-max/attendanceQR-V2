@@ -1,100 +1,94 @@
-<!-- attendance.html (for GitHub Pages) -->
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Mark Attendance</title>
-  <style>
-    body{font-family:Arial;text-align:center;padding:18px}
-    input,button{padding:10px;margin:8px;font-size:16px}
-    .success{color:green}
-    .error{color:red}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mark Attendance</title>
+<style>
+body{font-family:Arial;text-align:center;padding:18px}
+input,button{padding:10px;margin:8px;font-size:16px}
+.success{color:green}
+.error{color:red}
+</style>
 </head>
 <body>
-  <h2>Teacher Attendance</h2>
-  <p id="info">Preparing…</p>
+<h2>Teacher Attendance</h2>
+<p id="info">Preparing…</p>
 
-  <div id="nameBox" style="display:none">
-    <p>Enter your name (first time only):</p>
-    <input id="teacherName" placeholder="Full name" />
-    <br>
-    <button id="saveBtn">Save & Mark Attendance</button>
-  </div>
+<div id="nameBox" style="display:none">
+  <p>Enter your name (first time only):</p>
+  <input id="teacherName" placeholder="Full name" />
+  <br>
+  <button id="saveBtn">Save & Mark Attendance</button>
+</div>
 
-  <p id="result"></p>
+<p id="result"></p>
 
 <script>
-  // CONFIG: your Apps Script web app exec URL
-  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyYOUR_WEB_APP_ID/exec"; // <-- replace
-  const params = new URLSearchParams(window.location.search);
-  const branch = params.get('branch') || '';
-  const key = 'attendance_teacher_name';
+const BACKEND_URL = "https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec"; // replace
+const params = new URLSearchParams(window.location.search);
+const branch = params.get('branch') || '';
+const key = 'attendance_teacher_name';
 
-  const info = document.getElementById('info');
-  const nameBox = document.getElementById('nameBox');
-  const result = document.getElementById('result');
+const info = document.getElementById('info');
+const nameBox = document.getElementById('nameBox');
+const result = document.getElementById('result');
 
-  if (!branch) {
-    info.innerHTML = '<span class="error">Invalid QR link — branch missing. Contact admin.</span>';
+if (!branch) {
+  info.innerHTML = '<span class="error">Invalid QR link — branch missing.</span>';
+} else {
+  init();
+}
+
+function init(){
+  const stored = localStorage.getItem(key);
+  if (stored && stored.trim() !== '') {
+    markAttendance(stored);
   } else {
-    init();
+    info.textContent = 'Please enter your name (first time only).';
+    nameBox.style.display = 'block';
+    document.getElementById('saveBtn').addEventListener('click',()=>{
+      const nm = document.getElementById('teacherName').value.trim();
+      if(!nm) return alert('Enter your name');
+      localStorage.setItem(key,nm);
+      nameBox.style.display='none';
+      markAttendance(nm);
+    });
   }
+}
 
-  function init(){
-    const stored = localStorage.getItem(key);
-    if (stored && stored.trim() !== '') {
-      markAttendance(stored);
-    } else {
-      info.textContent = 'Please enter your name (first time only).';
-      nameBox.style.display = 'block';
-      document.getElementById('saveBtn').addEventListener('click', () => {
-        const nm = (document.getElementById('teacherName').value || '').trim();
-        if (!nm) return alert('Enter your name');
-        localStorage.setItem(key, nm);
-        nameBox.style.display = 'none';
-        markAttendance(nm);
-      });
-    }
+function markAttendance(name){
+  info.textContent='Requesting location permission...';
+  result.textContent='';
+  if(!navigator.geolocation){
+    info.innerHTML='<span class="error">Geolocation not supported.</span>';
+    return;
   }
-
-  function markAttendance(name) {
-    info.textContent = 'Requesting location permission...';
-    result.textContent = '';
-    if (!navigator.geolocation) {
-      info.innerHTML = '<span class="error">Geolocation not supported by this device.</span>';
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      info.textContent = 'Location captured. Sending attendance...';
-      try {
-        const payload = { action: 'submitAttendance', teacher: name, branch: branch, lat: lat, lng: lng };
-        const res = await fetch(BACKEND_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const json = await res.json();
-        if (json.success) {
-          result.innerHTML = '<span class="success">' + escapeHtml(json.message) + '</span>';
-          info.textContent = 'Attendance marked at ' + new Date().toLocaleString();
-        } else {
-          result.innerHTML = '<span class="error">' + escapeHtml(json.message) + '</span>';
-          info.textContent = 'Attendance not recorded.';
-        }
-      } catch (err) {
-        result.innerHTML = '<span class="error">Network error: ' + escapeHtml(err.message || err) + '</span>';
+  navigator.geolocation.getCurrentPosition(async(pos)=>{
+    const lat=pos.coords.latitude;
+    const lng=pos.coords.longitude;
+    info.textContent='Location captured. Sending attendance...';
+    try{
+      const url=`${BACKEND_URL}?action=submitAttendance&teacher=${encodeURIComponent(name)}&branch=${encodeURIComponent(branch)}&lat=${lat}&lng=${lng}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if(json.success){
+        result.innerHTML='<span class="success">'+escapeHtml(json.message)+'</span>';
+        info.textContent='Attendance marked at '+new Date().toLocaleString();
+      }else{
+        result.innerHTML='<span class="error">'+escapeHtml(json.message)+'</span>';
+        info.textContent='Attendance not recorded.';
       }
-    }, (err) => {
-      info.innerHTML = '<span class="error">Location error: ' + escapeHtml(err.message || err.code) + '</span>';
-      result.innerHTML = '<small>If you are inside Paytm/PhonePe in-app browser, try "Open in browser" to allow precise location.</small>';
-    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
-  }
+    }catch(err){
+      result.innerHTML='<span class="error">Network error: '+escapeHtml(err.message||err)+'</span>';
+    }
+  },(err)=>{
+    info.innerHTML='<span class="error">Location error: '+escapeHtml(err.message||err.code)+'</span>';
+    result.innerHTML='<small>If scanning in Paytm/PhonePe, try "Open in browser" for accurate location.</small>';
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
 
-  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 </body>
 </html>
