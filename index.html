@@ -1,0 +1,83 @@
+<!-- index.html (Admin) - for GitHub Pages -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR Attendance — Admin</title>
+  <style>
+    body{font-family:Arial;margin:20px;max-width:900px}
+    input,button,select{padding:8px;margin:6px 0;font-size:15px}
+    img.qr{border:1px solid #ddd;margin-top:8px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #eee;padding:8px;text-align:left}
+  </style>
+</head>
+<body>
+  <h1>Attendance — Admin</h1>
+
+  <section>
+    <h3>Generate QR for Branch</h3>
+    <input id="branchInput" placeholder="Enter branch name (exact)" />
+    <button id="genBtn">Generate QR</button>
+    <div id="qrArea" style="display:none">
+      <p><strong>Branch:</strong> <span id="branchName"></span></p>
+      <img id="qrImg" class="qr" width="250" alt="QR"/>
+      <p>URL: <a id="qrLink" target="_blank"></a></p>
+    </div>
+  </section>
+
+  <section>
+    <h3>View Attendance</h3>
+    <input id="fTeacher" placeholder="Filter teacher name (optional)" />
+    <input id="fBranch" placeholder="Filter branch name (optional)" />
+    <button id="viewBtn">View</button>
+    <div id="tableArea"></div>
+  </section>
+
+<script>
+  // CONFIG: set your Apps Script web app URL and attendance page URL
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace
+  const ATTENDANCE_PAGE_URL = "attendance.html"; // <-- replace with your hosted attendance page
+
+  document.getElementById('genBtn').addEventListener('click', () => {
+    const branch = (document.getElementById('branchInput').value || '').trim();
+    if (!branch) return alert('Enter branch name');
+    // build attendance page link (teachers scan this)
+    const link = ATTENDANCE_PAGE_URL + '?branch=' + encodeURIComponent(branch);
+    const qr = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + encodeURIComponent(link);
+    document.getElementById('branchName').textContent = branch;
+    document.getElementById('qrImg').src = qr;
+    document.getElementById('qrLink').href = link;
+    document.getElementById('qrLink').textContent = link;
+    document.getElementById('qrArea').style.display = 'block';
+  });
+
+  document.getElementById('viewBtn').addEventListener('click', async () => {
+    const teacher = document.getElementById('fTeacher').value.trim();
+    const branch = document.getElementById('fBranch').value.trim();
+    const url = BACKEND_URL + '?action=getAttendance&teacher=' + encodeURIComponent(teacher) + '&branch=' + encodeURIComponent(branch);
+    try {
+      const res = await fetch(url, { method: 'GET' });
+      const json = await res.json();
+      if (!json.success) return alert('Error fetching attendance: ' + (json.message || 'unknown'));
+      const rows = json.rows || [];
+      if (rows.length === 0) {
+        document.getElementById('tableArea').innerHTML = '<p>No records found.</p>';
+        return;
+      }
+      let html = '<table><tr><th>Teacher</th><th>Branch</th><th>Date</th><th>Time</th></tr>';
+      rows.forEach(r => {
+        html += `<tr><td>${escapeHtml(r.teacher)}</td><td>${escapeHtml(r.branch)}</td><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.time)}</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('tableArea').innerHTML = html;
+    } catch (err) {
+      alert('Fetch error: ' + err.message);
+    }
+  });
+
+  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
