@@ -142,7 +142,7 @@ function markAttendance(name){
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     
-    // 1. Hide location details from user
+    // 1. Location secured. Send record, but hide coordinates from user.
     info.innerHTML=`<span class="info loading">Location secured. Sending attendance record for <strong>${name}</strong>...</span>`;
 
     try{
@@ -153,7 +153,7 @@ function markAttendance(name){
       const json = await res.json();
 
       if(json.success){
-        // 2. Clear final message
+        // 2. Clear final success message
         result.innerHTML=`<span class="success">✅ Attendance Marked for <strong>${name}</strong>!</span>`;
         info.textContent=`Checked in at ${new Date().toLocaleTimeString()} (Branch: ${branch})`;
       } else {
