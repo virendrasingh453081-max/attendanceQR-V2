@@ -108,6 +108,16 @@
         border: 1px dashed #ccc;
         border-radius: 8px;
     }
+
+    /* Updated: QR Area now uses column layout to stack canvas, button, and link */
+    #qrArea {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin-top: 20px;
+    }
+
     #combinedQrCanvas {
         display: block;
         margin-bottom: 15px;
@@ -172,13 +182,15 @@
       <input id="branchInput" type="text" placeholder="Enter branch name (e.g., Downtown, Main)" />
       <button id="genBtn">Generate QR Code</button>
       
-      <div id="qrArea" style="display:none">
+      <!-- Removed style="display:none" to apply CSS properties, JS will manage visibility -->
+      <div id="qrArea" style="display:none;">
         
         <div id="qrContainer">
             <!-- Canvas where the combined QR image will be drawn -->
             <canvas id="combinedQrCanvas" width="400" height="480"></canvas>
         </div>
         
+        <!-- These elements are now centered and stacked vertically by #qrArea CSS -->
         <button id="downloadBtn" style="margin-top: 15px; background-color: #10b981;">Download QR (PNG)</button>
         <p style="margin-top: 15px;">**Generated Link:** <a id="qrLink" target="_blank" style="color: var(--primary-color);"></a></p>
       </div>
@@ -281,7 +293,7 @@
     // --- 4. Update UI ---
     document.getElementById('qrLink').href = link;
     document.getElementById('qrLink').textContent = link;
-    document.getElementById('qrArea').style.display = 'flex';
+    document.getElementById('qrArea').style.display = 'flex'; // Sets display to flex, triggering the new column layout
   }
 
   // -------------------------------------------------------------
