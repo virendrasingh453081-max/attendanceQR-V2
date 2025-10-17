@@ -41,7 +41,6 @@
 <body>
   <h1>Attendance — Admin Panel</h1>
 
-  <!-- QR Generation Section -->
   <section>
     <h3>Generate QR for Branch</h3>
     <input id="branchInput" placeholder="Enter branch name (exact)" />
@@ -55,11 +54,11 @@
 
   <hr />
 
-  <!-- Attendance View Section -->
   <section>
     <h3>View Attendance Records</h3>
     <input id="fTeacher" placeholder="Filter by teacher name (optional)" />
     <input id="fBranch" placeholder="Filter by branch name (optional)" />
+    <input id="fDate" type="date" title="Filter by date (YYYY-MM-DD)" /> 
     <button id="viewBtn">View Records</button>
     <div id="tableArea"></div>
   </section>
@@ -80,9 +79,6 @@
     // Use a reliable QR generator API
     const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
 
-    // Debug log (optional)
-    console.log("Generated QR URL:", qrURL);
-
     // Update page content
     document.getElementById('branchName').textContent = branch;
     document.getElementById('qrImg').src = qrURL;
@@ -95,8 +91,10 @@
   document.getElementById('viewBtn').addEventListener('click', async () => {
     const teacher = document.getElementById('fTeacher').value.trim();
     const branch = document.getElementById('fBranch').value.trim();
+    const date = document.getElementById('fDate').value.trim(); // Get the new date filter value
 
-    const url = `${BACKEND_URL}?action=getAttendance&teacher=${encodeURIComponent(teacher)}&branch=${encodeURIComponent(branch)}`;
+    // Add 'date' to the URL
+    const url = `${BACKEND_URL}?action=getAttendance&teacher=${encodeURIComponent(teacher)}&branch=${encodeURIComponent(branch)}&date=${encodeURIComponent(date)}`;
 
     try {
       const res = await fetch(url);
