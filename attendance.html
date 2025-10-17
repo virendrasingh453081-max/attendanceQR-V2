@@ -6,23 +6,28 @@
 <title>Mark Attendance</title>
 <style>
 body{
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', Arial, sans-serif;
   text-align: center;
   padding: 18px;
-  background-color: #f0f4f8; /* Light background */
+  background-color: #f0f4f8; 
+  color: #1e293b;
 }
-h2 { color: #1e40af; /* Blue header */ }
+h2 { 
+  color: #1e40af; 
+  margin-bottom: 20px;
+}
 input,button{
   padding: 12px;
   margin: 10px 0;
   font-size: 16px;
   border-radius: 6px;
-  border: 1px solid #ccc;
+  border: 1px solid #cbd5e1;
   width: 90%;
   max-width: 300px;
+  box-sizing: border-box;
 }
 button{
-  background-color: #3b82f6; /* Blue button */
+  background-color: #3b82f6; 
   color: white;
   font-weight: bold;
   cursor: pointer;
@@ -47,7 +52,20 @@ button:hover { background-color: #2563eb; }
   background-color: #fee2e2;
   border: 1px solid #ef4444;
 }
-.info { color: #4b5563; }
+.info { 
+  color: #4b5563; 
+  font-style: italic;
+  min-height: 20px;
+}
+.loading {
+  color: #3b82f6;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
 </style>
 </head>
 <body>
@@ -58,7 +76,6 @@ button:hover { background-color: #2563eb; }
   <p>Enter your name (first time only):</p>
   <input id="teacherName" placeholder="Full name" />
   <br>
-  <!-- New button to trigger attendance after name is saved -->
   <button id="saveBtn">Save Name & Mark Attendance</button>
 </div>
 
@@ -88,8 +105,7 @@ if (!branch) {
   const stored = localStorage.getItem(key);
   if(stored && stored.trim() !== ''){
     teacherName = stored.trim();
-    info.textContent = 'Welcome back, ' + teacherName + '. Scanning location...';
-    // Immediately attempt to mark attendance
+    info.textContent = 'Welcome back, ' + teacherName + '. Requesting location...';
     markAttendance(teacherName);
   } else {
     info.textContent = 'Please enter your name (first time only).';
@@ -105,7 +121,6 @@ if (!branch) {
       localStorage.setItem(key, nm);
       teacherName = nm;
       nameBox.style.display='none';
-      info.textContent = 'Name saved. Scanning location...';
       markAttendance(teacherName);
     });
   }
@@ -114,9 +129,11 @@ if (!branch) {
 // -----------------------------
 // Mark Attendance
 function markAttendance(name){
+  result.innerHTML = '<span class="info loading">Getting your location...</span>';
+  
   if(!navigator.geolocation){
-    info.innerHTML='<span class="error">Geolocation not supported by this device/browser.</span>';
-    result.innerHTML='<small>Cannot proceed without location services.</small>';
+    result.innerHTML = '<span class="error">Geolocation not supported by this device/browser.</span>';
+    info.textContent = 'Cannot proceed without location services.';
     return;
   }
 
@@ -124,7 +141,9 @@ function markAttendance(name){
   navigator.geolocation.getCurrentPosition(async(pos)=>{
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    info.textContent=`Location captured (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}). Sending attendance...`;
+    
+    // 1. Hide location details from user
+    info.innerHTML=`<span class="info loading">Location secured. Sending attendance record for <strong>${name}</strong>...</span>`;
 
     try{
       // Build GET URL
@@ -134,16 +153,18 @@ function markAttendance(name){
       const json = await res.json();
 
       if(json.success){
-        result.innerHTML='<span class="success">'+escapeHtml(json.message)+'</span>';
-        info.textContent='Attendance successfully marked at '+new Date().toLocaleString();
+        // 2. Clear final message
+        result.innerHTML=`<span class="success">✅ Attendance Marked for <strong>${name}</strong>!</span>`;
+        info.textContent=`Checked in at ${new Date().toLocaleTimeString()} (Branch: ${branch})`;
       } else {
-        result.innerHTML='<span class="error">ATTENDANCE FAILED: '+escapeHtml(json.message)+'</span>';
-        info.textContent='Check distance or try again.';
+        result.innerHTML=`<span class="error">ATTENDANCE FAILED: ${escapeHtml(json.message)}</span>`;
+        info.textContent='Please check your distance to the branch location or try again.';
       }
 
     }catch(err){
       console.error('Fetch error:', err);
       result.innerHTML='<span class="error">Network error. Check connection.</span>';
+      info.textContent='Could not reach the server.';
     }
 
   },(err)=>{
@@ -158,14 +179,21 @@ function markAttendance(name){
         errorMsg = "Timeout: Location request took too long.";
     }
 
-    info.innerHTML=`<span class="error">Location Error: ${errorMsg}</span>`;
-    result.innerHTML='<small>Please ensure location services are enabled for this app/browser and try again.</small>';
-  },{enableHighAccuracy:true,timeout:20000,maximumAge:0}); // Increased timeout for better capture reliability
+    result.innerHTML=`<span class="error">Location Error: ${errorMsg}</span>`;
+    info.textContent='Please ensure location services are enabled for this app/browser and try again.';
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0}); // 20s timeout
 }
 
 // -----------------------------
 // Helper: escape HTML
-function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeHtml(s){ 
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 </script>
 </body>
 </html>
