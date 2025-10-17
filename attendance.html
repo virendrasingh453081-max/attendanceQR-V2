@@ -25,7 +25,9 @@ input,button{padding:10px;margin:8px;font-size:16px}
 <p id="result"></p>
 
 <script>
-const BACKEND_URL = "https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec"; // replace
+// -----------------------------
+// CONFIG
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace
 const params = new URLSearchParams(window.location.search);
 const branch = params.get('branch') || '';
 const key = 'attendance_teacher_name';
@@ -34,19 +36,23 @@ const info = document.getElementById('info');
 const nameBox = document.getElementById('nameBox');
 const result = document.getElementById('result');
 
+// -----------------------------
+// Check branch param
 if (!branch) {
   info.innerHTML = '<span class="error">Invalid QR link — branch missing.</span>';
 } else {
   init();
 }
 
+// -----------------------------
+// Initialize
 function init(){
   const stored = localStorage.getItem(key);
-  if (stored && stored.trim() !== '') {
+  if(stored && stored.trim() !== ''){
     markAttendance(stored);
   } else {
     info.textContent = 'Please enter your name (first time only).';
-    nameBox.style.display = 'block';
+    nameBox.style.display='block';
     document.getElementById('saveBtn').addEventListener('click',()=>{
       const nm = document.getElementById('teacherName').value.trim();
       if(!nm) return alert('Enter your name');
@@ -57,37 +63,58 @@ function init(){
   }
 }
 
+// -----------------------------
+// Mark Attendance
 function markAttendance(name){
   info.textContent='Requesting location permission...';
   result.textContent='';
+
   if(!navigator.geolocation){
     info.innerHTML='<span class="error">Geolocation not supported.</span>';
     return;
   }
+
   navigator.geolocation.getCurrentPosition(async(pos)=>{
-    const lat=pos.coords.latitude;
-    const lng=pos.coords.longitude;
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
     info.textContent='Location captured. Sending attendance...';
+
     try{
-      const url=`${BACKEND_URL}?action=submitAttendance&teacher=${encodeURIComponent(name)}&branch=${encodeURIComponent(branch)}&lat=${lat}&lng=${lng}`;
-      const res = await fetch(url);
+      // Build GET URL
+      const url = `${BACKEND_URL}?action=submitAttendance&teacher=${encodeURIComponent(name)}&branch=${encodeURIComponent(branch)}&lat=${lat}&lng=${lng}`;
+      
+      // -----------------------------
+      // Debug logging
+      console.log('Attendance URL:', url);
+
+      const res = await fetch(url, { method:'GET' });
+      console.log('Raw response:', res);
+
       const json = await res.json();
+      console.log('JSON parsed:', json);
+
       if(json.success){
         result.innerHTML='<span class="success">'+escapeHtml(json.message)+'</span>';
         info.textContent='Attendance marked at '+new Date().toLocaleString();
-      }else{
+      } else {
         result.innerHTML='<span class="error">'+escapeHtml(json.message)+'</span>';
         info.textContent='Attendance not recorded.';
       }
+
     }catch(err){
+      console.error('Fetch error:', err);
       result.innerHTML='<span class="error">Network error: '+escapeHtml(err.message||err)+'</span>';
     }
+
   },(err)=>{
+    console.error('Geolocation error:', err);
     info.innerHTML='<span class="error">Location error: '+escapeHtml(err.message||err.code)+'</span>';
     result.innerHTML='<small>If scanning in Paytm/PhonePe, try "Open in browser" for accurate location.</small>';
   },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
 }
 
+// -----------------------------
+// Helper: escape HTML
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 </body>
