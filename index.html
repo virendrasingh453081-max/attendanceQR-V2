@@ -3,69 +3,176 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QR Attendance — Admin</title>
+  <title>XYZ Attendance Admin</title>
   <style>
+    /* Global Styles */
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      max-width: 900px;
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc; /* Light gray background */
+      color: #1e293b;
+      margin: 0;
+      padding: 20px;
     }
-    input, button, select {
-      padding: 8px;
-      margin: 6px 0;
-      font-size: 15px;
+
+    /* Container for layout */
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
+    
+    /* Header */
+    h1 {
+      color: #0d9488; /* Teal color for emphasis */
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Section Styles */
+    section {
+      padding: 20px;
+      margin-bottom: 25px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background-color: #f8fafc;
+    }
+    
+    h3 {
+        color: #0f766e;
+        border-bottom: 2px solid #e0f2f2;
+        padding-bottom: 8px;
+        margin-top: 0;
+    }
+
+    /* Form Controls */
+    input[type="text"], input[type="date"], button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box; /* Include padding/border in the element's total width */
+      font-size: 16px;
+    }
+
+    /* Buttons */
     button {
+      background-color: #0d9488; /* Teal */
+      color: white;
+      font-weight: 600;
       cursor: pointer;
+      transition: background-color 0.2s ease;
+      box-shadow: 0 2px 4px rgba(13, 148, 136, 0.4);
     }
+
+    button:hover {
+      background-color: #0f766e; /* Darker Teal */
+    }
+    
+    /* QR Area */
+    #qrArea {
+        text-align: center;
+        padding-top: 15px;
+    }
+
     img.qr {
-      border: 1px solid #ccc;
-      margin-top: 10px;
+      border: 6px solid #e0f2f2;
+      border-radius: 8px;
+      margin: 15px auto;
       display: block;
+      max-width: 100%;
+      height: auto;
     }
+
+    /* Table Styles */
     table {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden; /* Ensures rounded corners on the table */
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     th, td {
-      border: 1px solid #eee;
-      padding: 8px;
+      padding: 12px;
       text-align: left;
     }
     th {
-      background: #f5f5f5;
+      background-color: #2dd4bf; /* Lighter teal header */
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+    tr:nth-child(even) {
+      background-color: #f1f5f9; /* Zebra striping */
+    }
+    tr:hover {
+        background-color: #e2e8f0;
+    }
+    
+    .filter-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .filter-group input {
+        width: 100%;
+        margin: 0;
+    }
+    
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+        .filter-group {
+            grid-template-columns: 1fr;
+        }
     }
   </style>
 </head>
 <body>
-  <h1>Attendance — Admin Panel</h1>
+  <div class="container">
+    <h1>XYZ Institute — Attendance Admin Panel</h1>
 
-  <section>
-    <h3>Generate QR for Branch</h3>
-    <input id="branchInput" placeholder="Enter branch name (exact)" />
-    <button id="genBtn">Generate QR</button>
-    <div id="qrArea" style="display:none">
-      <p><strong>Branch:</strong> <span id="branchName"></span></p>
-      <img id="qrImg" class="qr" width="250" alt="QR Code"/>
-      <p>URL: <a id="qrLink" target="_blank"></a></p>
-    </div>
-  </section>
+    <!-- QR Generation Section -->
+    <section>
+      <h3>Generate QR Code</h3>
+      <input id="branchInput" type="text" placeholder="Enter Branch Name (e.g., Main Campus)" />
+      <button id="genBtn">Generate QR Link</button>
+      <div id="qrArea" style="display:none">
+        <p><strong>Branch:</strong> <span id="branchName" style="color:#0d9488; font-weight:600;"></span></p>
+        <img id="qrImg" class="qr" width="250" alt="QR Code"/>
+        <p>URL: <a id="qrLink" target="_blank" style="color:#0f766e;"></a></p>
+      </div>
+    </section>
 
-  <hr />
-
-  <section>
-    <h3>View Attendance Records</h3>
-    <input id="fTeacher" placeholder="Filter by teacher name (optional)" />
-    <input id="fBranch" placeholder="Filter by branch name (optional)" />
-    <input id="fDate" type="date" title="Filter by date (YYYY-MM-DD)" /> 
-    <button id="viewBtn">View Records</button>
-    <div id="tableArea"></div>
-  </section>
+    <!-- Attendance View Section -->
+    <section>
+      <h3>View Attendance Records</h3>
+      
+      <input id="fTeacher" type="text" placeholder="Filter by Teacher Name (optional)" />
+      <input id="fBranch" type="text" placeholder="Filter by Branch Name (optional)" />
+      
+      <!-- NEW DATE RANGE FILTER -->
+      <div class="filter-group">
+          <input id="fFromDate" type="date" title="From Date" /> 
+          <input id="fToDate" type="date" title="To Date" /> 
+      </div>
+      
+      <button id="viewBtn">Load & Filter Records</button>
+      
+      <div id="tableArea"></div>
+    </section>
+  </div>
 
 <script>
   // ✅ CONFIGURATION
-  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; // <-- replace with your actual Google Apps Script Web App URL
+  // !!! IMPORTANT: Update these URLs with your actual deployment links !!!
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; 
   const ATTENDANCE_PAGE_URL = "https://virendrasingh453081-max.github.io/attendanceQR-V2/attendance.html"; // full GitHub Pages URL
 
   // 🧩 Generate QR button logic
@@ -73,13 +180,9 @@
     const branch = document.getElementById('branchInput').value.trim();
     if (!branch) return alert('Please enter a branch name.');
 
-    // Full attendance page link
     const link = `${ATTENDANCE_PAGE_URL}?branch=${encodeURIComponent(branch)}`;
-
-    // Use a reliable QR generator API
     const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
 
-    // Update page content
     document.getElementById('branchName').textContent = branch;
     document.getElementById('qrImg').src = qrURL;
     document.getElementById('qrLink').href = link;
@@ -91,23 +194,30 @@
   document.getElementById('viewBtn').addEventListener('click', async () => {
     const teacher = document.getElementById('fTeacher').value.trim();
     const branch = document.getElementById('fBranch').value.trim();
-    const date = document.getElementById('fDate').value.trim(); // Get the new date filter value
+    const fromDate = document.getElementById('fFromDate').value.trim(); // Get 'From' date
+    const toDate = document.getElementById('fToDate').value.trim();     // Get 'To' date
+    
+    document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">Loading...</p>';
 
-    // Add 'date' to the URL
-    const url = `${BACKEND_URL}?action=getAttendance&teacher=${encodeURIComponent(teacher)}&branch=${encodeURIComponent(branch)}&date=${encodeURIComponent(date)}`;
+    // Construct URL with new date range parameters
+    const url = `${BACKEND_URL}?action=getAttendance` + 
+                `&teacher=${encodeURIComponent(teacher)}` + 
+                `&branch=${encodeURIComponent(branch)}` + 
+                `&fromDate=${encodeURIComponent(fromDate)}` + // Pass 'From'
+                `&toDate=${encodeURIComponent(toDate)}`;      // Pass 'To'
 
     try {
       const res = await fetch(url);
       const json = await res.json();
 
       if (!json.success) {
-        alert('Error fetching attendance: ' + (json.message || 'unknown'));
+        document.getElementById('tableArea').innerHTML = `<p style="color:red; text-align:center;">Error fetching attendance: ${escapeHtml(json.message || 'unknown')}</p>`;
         return;
       }
 
       const rows = json.rows || [];
       if (rows.length === 0) {
-        document.getElementById('tableArea').innerHTML = '<p>No records found.</p>';
+        document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">No records found matching your filters.</p>';
         return;
       }
 
@@ -123,7 +233,7 @@
       html += '</table>';
       document.getElementById('tableArea').innerHTML = html;
     } catch (err) {
-      alert('Fetch error: ' + err.message);
+      document.getElementById('tableArea').innerHTML = `<p style="color:red; text-align:center;">Network error: ${escapeHtml(err.message || err)}</p>`;
     }
   });
 
