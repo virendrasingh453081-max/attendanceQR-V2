@@ -3,177 +3,186 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>XYZ Attendance Admin</title>
+  <title>QR Attendance — Admin</title>
   <style>
-    /* Global Styles */
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #f3f4f6;
+      --text-color: #1f2937;
+      --card-bg: white;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f8fafc; /* Light gray background */
-      color: #1e293b;
+      font-family: 'Inter', system-ui, sans-serif;
       margin: 0;
       padding: 20px;
+      background-color: var(--secondary-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-
-    /* Container for layout */
     .container {
+        width: 100%;
         max-width: 900px;
-        margin: 0 auto;
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0;
     }
-    
-    /* Header */
-    h1 {
-      color: #0d9488; /* Teal color for emphasis */
+    header {
+      width: 100%;
+      background: var(--primary-color);
+      color: white;
+      padding: 20px 0;
       text-align: center;
       margin-bottom: 20px;
-    }
-
-    /* Section Styles */
-    section {
-      padding: 20px;
-      margin-bottom: 25px;
-      border: 1px solid #e2e8f0;
       border-radius: 8px;
-      background-color: #f8fafc;
+      box-shadow: var(--shadow);
     }
-    
+    header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+    }
+    header h2 {
+        margin-top: 5px;
+        font-size: 1rem;
+        font-weight: 300;
+        opacity: 0.9;
+    }
+    section {
+      background: var(--card-bg);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
     h3 {
-        color: #0f766e;
-        border-bottom: 2px solid #e0f2f2;
-        padding-bottom: 8px;
-        margin-top: 0;
+      color: var(--primary-color);
+      margin-top: 0;
+      border-bottom: 2px solid var(--secondary-color);
+      padding-bottom: 8px;
+      margin-bottom: 15px;
     }
-
-    /* Form Controls */
-    input[type="text"], input[type="date"], button {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: 1px solid #cbd5e1;
+    input[type="text"], input[type="date"] {
+      padding: 10px;
+      margin: 8px 5px 8px 0;
+      font-size: 15px;
       border-radius: 6px;
-      box-sizing: border-box; /* Include padding/border in the element's total width */
-      font-size: 16px;
+      border: 1px solid #d1d5db;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 280px;
     }
-
-    /* Buttons */
+    .filter-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .filter-group label {
+        font-weight: 500;
+        margin-right: 5px;
+    }
     button {
-      background-color: #0d9488; /* Teal */
+      padding: 10px 15px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background-color: var(--primary-color);
       color: white;
       font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      box-shadow: 0 2px 4px rgba(13, 148, 136, 0.4);
+      transition: background-color 0.2s;
     }
-
-    button:hover {
-      background-color: #0f766e; /* Darker Teal */
-    }
-    
-    /* QR Area */
-    #qrArea {
-        text-align: center;
-        padding-top: 15px;
-    }
-
+    button:hover { background-color: #1d4ed8; }
     img.qr {
-      border: 6px solid #e0f2f2;
-      border-radius: 8px;
-      margin: 15px auto;
+      border: 4px solid var(--secondary-color);
+      margin-top: 15px;
       display: block;
-      max-width: 100%;
-      height: auto;
+      border-radius: 8px;
     }
-
-    /* Table Styles */
     table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin-top: 20px;
+      margin-top: 15px;
       border-radius: 8px;
-      overflow: hidden; /* Ensures rounded corners on the table */
+      overflow: hidden;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     th, td {
-      padding: 12px;
+      padding: 12px 15px;
       text-align: left;
+      border-bottom: 1px solid #f3f4f6;
     }
     th {
-      background-color: #2dd4bf; /* Lighter teal header */
+      background: var(--primary-color);
       color: white;
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
-    tr:nth-child(even) {
-      background-color: #f1f5f9; /* Zebra striping */
+    tr:last-child td {
+        border-bottom: none;
     }
-    tr:hover {
-        background-color: #e2e8f0;
+    tr:nth-child(even) td {
+        background-color: var(--secondary-color);
     }
-    
-    .filter-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 15px;
+    #tableArea {
+        overflow-x: auto;
     }
-    .filter-group input {
-        width: 100%;
-        margin: 0;
-    }
-    
+
     /* Mobile adjustments */
     @media (max-width: 600px) {
         .filter-group {
-            grid-template-columns: 1fr;
+            flex-direction: column;
+            gap: 5px;
+        }
+        input[type="text"], input[type="date"] {
+            max-width: 100%;
         }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>XYZ Institute — Attendance Admin Panel</h1>
+    <header>
+        <h2>Admin Panel</h2>
+        <h1>XYZ Institute Attendance</h1>
+    </header>
 
-    <!-- QR Generation Section -->
     <section>
-      <h3>Generate QR Code</h3>
-      <input id="branchInput" type="text" placeholder="Enter Branch Name (e.g., Main Campus)" />
-      <button id="genBtn">Generate QR Link</button>
+      <h3>Generate QR for Branch</h3>
+      <input id="branchInput" type="text" placeholder="Enter branch name (exact)" />
+      <button id="genBtn">Generate QR Code</button>
       <div id="qrArea" style="display:none">
-        <p><strong>Branch:</strong> <span id="branchName" style="color:#0d9488; font-weight:600;"></span></p>
+        <p><strong>Branch:</strong> <span id="branchName"></span></p>
         <img id="qrImg" class="qr" width="250" alt="QR Code"/>
-        <p>URL: <a id="qrLink" target="_blank" style="color:#0f766e;"></a></p>
+        <p>URL: <a id="qrLink" target="_blank"></a></p>
       </div>
     </section>
 
-    <!-- Attendance View Section -->
     <section>
-      <h3>View Attendance Records</h3>
-      
-      <input id="fTeacher" type="text" placeholder="Filter by Teacher Name (optional)" />
-      <input id="fBranch" type="text" placeholder="Filter by Branch Name (optional)" />
-      
-      <!-- NEW DATE RANGE FILTER -->
+      <h3>Attendance Records</h3>
       <div class="filter-group">
-          <input id="fFromDate" type="date" title="From Date" /> 
-          <input id="fToDate" type="date" title="To Date" /> 
+        <input id="fTeacher" type="text" placeholder="Filter by teacher name" style="max-width: 200px;"/>
+        <input id="fBranch" type="text" placeholder="Filter by branch name" style="max-width: 200px;"/>
       </div>
-      
+      <div class="filter-group">
+        <label for="fromDate">From Date:</label>
+        <input id="fromDate" type="date" title="Start Date" style="max-width: 150px;"/>
+        <label for="toDate">To Date:</label>
+        <input id="toDate" type="date" title="End Date" style="max-width: 150px;"/>
+      </div>
       <button id="viewBtn">Load & Filter Records</button>
-      
       <div id="tableArea"></div>
     </section>
   </div>
 
 <script>
   // ✅ CONFIGURATION
-  // !!! IMPORTANT: Update these URLs with your actual deployment links !!!
+  // !!! REPLACE THIS with your actual Google Apps Script Web App URL !!!
   const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxblISNQjDpjdgsTjd-4q9rkBXd_VyUuY8vZNe-hMhpfBrSRHUccpjPRYzyU6bOZALP/exec"; 
-  const ATTENDANCE_PAGE_URL = "https://virendrasingh453081-max.github.io/attendanceQR-V2/attendance.html"; // full GitHub Pages URL
+  const ATTENDANCE_PAGE_URL = "https://virendrasingh453081-max.github.io/attendanceQR-V2/attendance.html"; 
 
   // 🧩 Generate QR button logic
   document.getElementById('genBtn').addEventListener('click', () => {
@@ -192,32 +201,32 @@
 
   // 📊 Fetch attendance records from backend
   document.getElementById('viewBtn').addEventListener('click', async () => {
+    document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">Loading records, please wait...</p>';
+
     const teacher = document.getElementById('fTeacher').value.trim();
     const branch = document.getElementById('fBranch').value.trim();
-    const fromDate = document.getElementById('fFromDate').value.trim(); // Get 'From' date
-    const toDate = document.getElementById('fToDate').value.trim();     // Get 'To' date
-    
-    document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">Loading...</p>';
+    const fromDate = document.getElementById('fromDate').value.trim();
+    const toDate = document.getElementById('toDate').value.trim();
 
-    // Construct URL with new date range parameters
-    const url = `${BACKEND_URL}?action=getAttendance` + 
-                `&teacher=${encodeURIComponent(teacher)}` + 
-                `&branch=${encodeURIComponent(branch)}` + 
-                `&fromDate=${encodeURIComponent(fromDate)}` + // Pass 'From'
-                `&toDate=${encodeURIComponent(toDate)}`;      // Pass 'To'
+    // Construct the URL with all filter parameters
+    let url = `${BACKEND_URL}?action=getAttendance`;
+    url += `&teacher=${encodeURIComponent(teacher)}`;
+    url += `&branch=${encodeURIComponent(branch)}`;
+    if(fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
+    if(toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
 
     try {
       const res = await fetch(url);
       const json = await res.json();
 
       if (!json.success) {
-        document.getElementById('tableArea').innerHTML = `<p style="color:red; text-align:center;">Error fetching attendance: ${escapeHtml(json.message || 'unknown')}</p>`;
+        document.getElementById('tableArea').innerHTML = `<p style="color:red;">Error fetching attendance: ${escapeHtml(json.message || 'unknown')}</p>`;
         return;
       }
 
       const rows = json.rows || [];
       if (rows.length === 0) {
-        document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">No records found matching your filters.</p>';
+        document.getElementById('tableArea').innerHTML = '<p style="text-align:center;">No records found for the applied filters.</p>';
         return;
       }
 
@@ -233,7 +242,7 @@
       html += '</table>';
       document.getElementById('tableArea').innerHTML = html;
     } catch (err) {
-      document.getElementById('tableArea').innerHTML = `<p style="color:red; text-align:center;">Network error: ${escapeHtml(err.message || err)}</p>`;
+      document.getElementById('tableArea').innerHTML = `<p style="color:red;">Network error: ${escapeHtml(err.message)}</p>`;
     }
   });
 
